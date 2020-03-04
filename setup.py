@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import os
 
 from setuptools import setup, find_packages
 
@@ -30,16 +29,7 @@ setup(
     install_requires=_requires_from_file('requirements.txt'),
     license="MIT",
     classifiers=[
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3 :: Only',
         'License :: OSI Approved :: MIT License',
-    ],
-    entry_points="""
-      # -*- Entry points: -*-
-      [console_scripts]
-      pkgdep = pypipkg.scripts.command:main
-    """,
+    ]
 )
