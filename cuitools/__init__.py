@@ -6,6 +6,8 @@ import termios
 
 import cuitools.subp
 
+def reset():
+    print("\033[2J\033[1H")
 
 def Input(text, normal=False, textcolor="\033[38;5;10m", dotcolor="\033[38;5;7m", usercolor="\033[38;5;12m", dot=True):
     """ \033[0m	指定をリセットし未指定状態に戻す（0は省略可）
@@ -112,11 +114,11 @@ def Inputfile(text, textcolor="\033[38;5;10m"):
     return pk
 
 
-def box(title="", printtext=None, reset=False, place="c"):
+def box(title="", printtext=None, reset_=False, place="c"):
     if printtext is None:
         printtext = []
-    if reset:
-        subp.reset()
+    if reset_:
+        reset()
     printtext.insert(0, title)
     printtext.append("")
     terminal_size = shutil.get_terminal_size()

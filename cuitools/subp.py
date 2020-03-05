@@ -3,10 +3,6 @@ import subprocess
 import unicodedata
 
 
-def reset():
-    print("\033[2J\033[1H")
-
-
 def count_zen(str):
     n = 0
     for c in str:
