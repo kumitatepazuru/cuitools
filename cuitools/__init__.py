@@ -6,8 +6,10 @@ import termios
 
 import cuitools.subp
 
+
 def reset():
     print("\033[2J\033[1H")
+
 
 def Input(text, normal=False, textcolor="\033[38;5;10m", dotcolor="\033[38;5;7m", usercolor="\033[38;5;12m", dot=True):
     """ \033[0m	指定をリセットし未指定状態に戻す（0は省略可）
@@ -134,10 +136,10 @@ def box(title="", printtext=None, reset_=False, place="c"):
         x = 1
     elif place == "ne":
         y = 1
-        x = terminal_size[0]-lentext-1
+        x = terminal_size[0] - lentext - 1
     elif place == "e":
         y = int(terminal_size[1] / 2 - len(printtext) / 2)
-        x = terminal_size[0]-lentext-1
+        x = terminal_size[0] - lentext - 1
     elif place == "w":
         y = int(terminal_size[1] / 2 - len(printtext) / 2)
         x = 1
@@ -149,7 +151,7 @@ def box(title="", printtext=None, reset_=False, place="c"):
         x = 1
     elif place == "se":
         y = terminal_size[1] - len(printtext)
-        x = terminal_size[0]-lentext-1
+        x = terminal_size[0] - lentext - 1
     else:
         raise IndexError("placeはc,n,nw,ne,e,w,s,sw,seのみ対応しています")
     for i in range(len(printtext)):
@@ -159,3 +161,51 @@ def box(title="", printtext=None, reset_=False, place="c"):
             print("\033[" + str(y + i) + ";" + str(x) + "H┗" + subp.center_kana(printtext[i], lentext, "━") + "┛")
         else:
             print("\033[" + str(y + i) + ";" + str(x) + "H┃" + subp.center_kana(printtext[i], lentext, " ") + "┃")
+
+
+def table(printtext, listed=0):
+    tabletext = []
+    lentext = []
+    for i in range(len(printtext[0])):
+        temp = []
+        for j in printtext:
+            temp.append(str(j[i]))
+        lentext.append(max(map(subp.width_kana, temp)))
+
+    temp = "┏"
+    for i in range(len(lentext)):
+        temp += "━" * lentext[i]
+        if i != len(lentext) - 1:
+            temp += "┳"
+        else:
+            temp += "┓"
+
+    tabletext.append(temp)
+
+    for i in range(len(printtext)):
+        temp = "┃"
+        for j in range(len(printtext[i])):
+            # print(subp.width_kana(str(printtext[i][j])))
+            temp += subp.center_kana(str(printtext[i][j]), lentext[j], " ") + "┃"
+        tabletext.append(temp)
+
+        if i != len(printtext) - 1:
+            temp = "┣"
+            for j in range(len(lentext)):
+                if j == len(lentext) - 1:
+                    temp += "━" * lentext[j] + "┫"
+                else:
+                    temp += "━" * lentext[j] + "╋"
+        else:
+            temp = "┗"
+            for j in range(len(lentext)):
+                if j == len(lentext) - 1:
+                    temp += "━" * lentext[j] + "┛"
+                else:
+                    temp += "━" * lentext[j] + "┻"
+        tabletext.append(temp)
+    # print(lentext)
+    if listed == 1:
+        return tabletext
+    else:
+        return "\n".join(tabletext)
