@@ -209,3 +209,100 @@ def table(printtext, listed=0):
         return tabletext
     else:
         return "\n".join(tabletext)
+
+
+def printlist(title, listdata=None, center=True):
+    if listdata is None or listdata == []:
+        empty = 1
+        listdata = ["empty", "Press Enter Key"]
+    else:
+        empty = 0
+    k = ""
+    select = 0
+    page = 0
+    # event = threading.Event()
+    # threadingfunc = threading.Thread(target=subp.threading, args=(title, 1, event))
+    # threadingfunc.start()
+    while k != "\n":
+        terminal_size = shutil.get_terminal_size()
+        reset()
+        # print("\033[" + str(terminal_size[1] + 1) + ";0HUP/DOWN:CURSOR MOVE", end="")
+        print("\033[" + str(terminal_size[1] + 1) + ";0H" + str(select + 1) + "/" + str(len(listdata)) + " " + str(
+            int((select + 1) / len(listdata) * 10000) / 100) + "%", end="")
+        if subp.width_kana(title) < terminal_size[0]:
+            print("\033[" + "0;0H" + subp.center_kana(title, terminal_size[0], " "))
+        else:
+            n = subp.whilexcount(title, terminal_size[0])
+            print("\033[" + "0;0H" + subp.center_kana(title, terminal_size[0], " ")[:n - 3] + "...")
+        print()
+        for i in range(len(listdata)):
+            if i - page + 3 > 2 and i - page + 1 < terminal_size[1] - 2:
+                if center:
+                    if select == i:
+                        # print(terminal_size[0]-(int(terminal_size[0]/2-len(listdata[i])/2)+len(listdata[i])))
+                        if subp.width_kana(listdata[i]) < terminal_size[0]:
+                            print(
+                                "\033[" + str(i - page + 3) + ";0H\033[7m" + subp.center_kana(listdata[i],
+                                                                                              terminal_size[0],
+                                                                                              " ") + "\033[0m")
+                        else:
+                            n = subp.whilexcount(listdata[i], terminal_size[0])
+                            print("\033[" + str(i - page + 3) + ";0H\033[7m" + subp.center_kana(
+                                subp.center_kana(listdata[i], terminal_size[0], " ")[:n - 3] + "...", terminal_size[0],
+                                " ") + "\033[0m")
+                    else:
+                        # print("\033[" + str(i + 3) + ";0H" + subp.center_kana(listdata[i], terminal_size[0], " "))
+                        if subp.width_kana(listdata[i]) < terminal_size[0]:
+                            print("\033[" + str(i - page + 3) + ";0H" + subp.center_kana(listdata[i], terminal_size[0],
+                                                                                         " "))
+                        else:
+                            n = subp.whilexcount(listdata[i], terminal_size[0])
+                            print("\033[" + str(i - page + 3) + ";0H" + subp.center_kana(
+                                subp.center_kana(listdata[i], terminal_size[0], " ")[:n - 3] + "...", terminal_size[0],
+                                " "))
+                else:
+                    if select == i:
+                        # print(terminal_size[0]-(int(terminal_size[0]/2-len(listdata[i])/2)+len(listdata[i])))
+                        if subp.width_kana(listdata[i]) < terminal_size[0]:
+                            print(
+                                "\033[" + str(i - page + 3) + ";0H\033[7m" + subp.ljust_kana(listdata[i],
+                                                                                             terminal_size[0],
+                                                                                             " ") + "\033[0m")
+                        else:
+                            n = subp.whilexcount(listdata[i], terminal_size[0])
+                            print("\033[" + str(i - page + 3) + ";0H\033[7m" + subp.ljust_kana(
+                                subp.center_kana(listdata[i], terminal_size[0], " ")[:n - 3] + "...", terminal_size[0],
+                                " ") + "\033[0m")
+                    else:
+                        # print("\033[" + str(i + 3) + ";0H" + subp.center_kana(listdata[i], terminal_size[0], " "))
+                        if subp.width_kana(listdata[i]) < terminal_size[0]:
+                            print("\033[" + str(i - page + 3) + ";0H" + subp.ljust_kana(listdata[i], terminal_size[0],
+                                                                                        " "))
+                        else:
+                            n = subp.whilexcount(listdata[i], terminal_size[0])
+                            print("\033[" + str(i - page + 3) + ";0H" + subp.ljust_kana(
+                                subp.center_kana(listdata[i], terminal_size[0], " ")[:n - 3] + "...", terminal_size[0],
+                                " "))
+        k = Key()
+        if k == "\x1b":
+            Key()
+            k = Key()
+            if k == "A":
+                if select != 0:
+                    if select - page != 0:
+                        select -= 1
+                    else:
+                        page -= 1
+                        select -= 1
+            elif k == "B":
+                if len(listdata) - 1 != select:
+                    if select - page + 2 != terminal_size[1] - 2:
+                        select += 1
+                    else:
+                        page += 1
+                        select += 1
+    reset()
+    if empty == 1:
+        return -1
+    else:
+        return select
