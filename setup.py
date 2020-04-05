@@ -17,7 +17,7 @@ def _requires_from_file(filename):
 
 setup(
     name="cuitools",
-    version="1.3.0",
+    version="1.6.0",
     url='https://github.com/kumitatepazuru/cuitools',
     author='kumitatepazuru',
     author_email='teltelboya18@gmail.com',
@@ -27,6 +27,7 @@ setup(
     long_description=readme,
     packages=find_packages(),
     install_requires=_requires_from_file('requirements.txt'),
+    long_description_content_type='text/markdown',
     license="MIT",
     classifiers=[
         'Programming Language :: Python :: 3 :: Only',
