@@ -258,8 +258,8 @@ def Inputfilegui(title, path=None):
         event.set()
         return -2
     else:
-        reset()
         event.set()
+        reset()
         if k != "q":
             return filelist[select]
         else:
