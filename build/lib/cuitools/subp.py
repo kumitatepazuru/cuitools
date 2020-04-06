@@ -1,9 +1,12 @@
+import glob
 import math
+import os
+import re
 import shutil
 import subprocess
+import threading
 import unicodedata
 import cuitools.__init__
-
 
 # def threading(text,y,event,before=""):
 #
@@ -36,6 +39,40 @@ import cuitools.__init__
 #         terminal_size = shutil.get_terminal_size()
 #         if terminal_size != temp:
 #             cuitools.__init__.reset()
+
+
+def isdir(path, select=False):
+    if len(path.split("/")) == 2:
+        nselect = not select
+        return "\033[38;5;12m" * nselect + path.split("/")[0] + "\033[0m" + "\033[7m" * select + "/" + path.split("/")[
+            1]
+    else:
+        return path
+
+
+def th1(data, title, path, event, text=None):
+    terminal_size = shutil.get_terminal_size()
+    lentitle = width_kana(path)
+    if text is not None:
+        print("\033[2;1H┃" + ljust_kana(text, terminal_size[0] - 2) + "┃")
+        if event.wait(timeout=1):
+            pass
+    print("\033[2;1H┃" + ljust_kana("total " + str(len(data)), terminal_size[0] - 2) + "┃")
+    if event.wait(timeout=1):
+        pass
+    if lentitle + 1 < terminal_size[0] - 2:
+        print("\033[2;1H┃" + ljust_kana(path + "/", terminal_size[0] - 2) + "┃")
+    else:
+        print("\033[2;1H┃" + ljust_kana("..." + path[(terminal_size[0] - 6) * -1:] + "/", terminal_size[0] - 2) + "┃")
+        # print("\033[2;1H┃..." + ljust_kana(path[(terminal_size[0]-5)*-1:], terminal_size[0] - 2) + "┃")
+    if event.wait(timeout=1):
+        pass
+    else:
+        lentitle = width_kana(title)
+        if lentitle < terminal_size[0] - 2:
+            print("\033[2;1H┃" + ljust_kana(title, terminal_size[0] - 2) + "┃")
+        else:
+            print("\033[2;1H┃" + ljust_kana(title[:terminal_size[0] - 5] + "...", terminal_size[0] - 2) + "┃")
 
 
 def whilexcount(text, x):

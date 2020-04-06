@@ -2,8 +2,10 @@
 ### install
 ```pip3 install cuitools```
 
-###help
+### help
+
 [Here!](https://github.com/kumitatepazuru/cuitools/wiki)
 
-###Bugs, features you want to add
+### Bugs, features you want to add
+
 [Here!](https://github.com/kumitatepazuru/cuitools/issues)
