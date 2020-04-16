@@ -12,7 +12,7 @@ import cuitools.subp
 
 def reset():
     terminal_size = shutil.get_terminal_size()
-    print("\033["+str(terminal_size[1])+"S")
+    print("\033[1;1H"+"\033[2K\n"*(terminal_size[1]),end="")
 
 
 def Input(text, normal=False, textcolor="\033[38;5;10m", dotcolor="\033[38;5;7m", usercolor="\033[38;5;12m", dot=True):
