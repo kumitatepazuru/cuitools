@@ -66,7 +66,6 @@ def Inputfilegui(title, path=None):
     filelist = glob.glob(path + "/" + search_text + "*")
     printdata = list(map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
     lenfilelist = max(list(map(lambda n: subp.width_kana(n), printdata))) + 1
-    print(filelist)
     print("\033[1;1H\033[2J┏" + "━" * (terminal_size[0] - 2) + "┓")
     print("\033[3;1H┣" + "━" * (terminal_size[0] - 2) + "┫")
 
