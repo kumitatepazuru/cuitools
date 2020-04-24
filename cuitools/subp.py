@@ -1,12 +1,8 @@
-import glob
 import math
-import os
-import re
 import shutil
 import subprocess
-import threading
+import time
 import unicodedata
-import cuitools.__init__
 
 # def threading(text,y,event,before=""):
 #
@@ -51,6 +47,7 @@ def isdir(path, select=False):
 
 
 def th1(data, title, path, event, text=None):
+    time.sleep(0.1)
     terminal_size = shutil.get_terminal_size()
     lentitle = width_kana(path)
     if text is not None:

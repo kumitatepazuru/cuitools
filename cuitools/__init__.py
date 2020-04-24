@@ -6,36 +6,15 @@ import shutil
 import sys
 import termios
 import threading
+import time
 
 import cuitools.subp
 
 
 def reset():
     terminal_size = shutil.get_terminal_size()
-    print("\033[1;1H"+"\033[2K\n"*(terminal_size[1]),end="")
-
-
-def Input(text, normal=False, textcolor="\033[38;5;10m", dotcolor="\033[38;5;7m", usercolor="\033[38;5;12m", dot=True):
-    """ \033[0m	指定をリセットし未指定状態に戻す（0は省略可）
-        \033[1m	太字
-        \033[2m	薄く表示
-        \033[3m	イタリック
-        \033[4m	アンダーライン
-        \033[5m	ブリンク
-        \033[6m	高速ブリンク
-        \033[7m	文字色と背景色の反転
-        \033[8m	表示を隠す（コピペ可能）
-        \033[9m	取り消し
-        """
-    if not normal:
-        normal = "\033[1m"
-    else:
-        normal = "\033[0m"
-    if dot:
-        inp = input(normal + textcolor + text + dotcolor + ":\033[0m" + usercolor)
-    else:
-        inp = input(normal + textcolor + text + usercolor)
-    return inp
+    print("\033[1;1H" + "\033[2K\n" * (terminal_size[1]-1), end="")
+    print("\033[1;1H")
 
 
 def Key():
@@ -58,7 +37,6 @@ def Key():
 
 
 def Inputfilegui(title, path=None):
-    terminal_size = shutil.get_terminal_size()
     # path = os.path.expanduser("/usr/share")
     if path is None:
         path = os.path.expanduser("~")
@@ -66,152 +44,195 @@ def Inputfilegui(title, path=None):
     filelist = glob.glob(path + "/" + search_text + "*")
     printdata = list(map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
     lenfilelist = max(list(map(lambda n: subp.width_kana(n), printdata))) + 1
-    print("\033[1;1H\033[2J┏" + "━" * (terminal_size[0] - 2) + "┓")
-    print("\033[3;1H┣" + "━" * (terminal_size[0] - 2) + "┫")
 
-    row = math.floor((terminal_size[0] - 2) / lenfilelist)
     # print(len(filelist),row,terminal_size[0]-2,lenfilelist)
     k = ""
     page = 0
     search = 0
-    select = page * row * (terminal_size[1] - 5) + 0
+    select = 0
     event = threading.Event()
     th = threading.Thread(target=subp.th1, args=([filelist, title, path, event]))
     th.start()
+    terminal_size = shutil.get_terminal_size()
+    ttmp = terminal_size
     try:
         while k != "\n" and k != "q":
-            print("\033[" + str(terminal_size[1]) + ";1H┗" + "━" * (terminal_size[0] - 2) + "┛", end="")
-            print("\033[4;1H", end="")
-            if lenfilelist != -1:
-                for i in range(math.ceil(len(printdata) / row)):
-                    if i > terminal_size[1] - 6:
-                        break
-                    print("\033[2K┃", end="")
-                    tmp = 0
-                    for j in range(row):
-                        if len(printdata) - 1 < page * (row * (terminal_size[1] - 5)) + (i * row + j):
+            terminal_size = shutil.get_terminal_size()
+            if ttmp != terminal_size:
+                event.set()
+                time.sleep(0.1)
+                event.clear()
+                th = threading.Thread(target=subp.th1, args=([filelist, title, path, event]))
+                th.start()
+            terminal_size = shutil.get_terminal_size()
+            ttmp = terminal_size
+            row = math.floor((terminal_size[0] - 2) / lenfilelist)
+            if row != 0:
+                print("\033[1;1H┏" + "━" * (terminal_size[0] - 2) + "┓")
+                print("\033[3;1H┣" + "━" * (terminal_size[0] - 2) + "┫")
+                print("\033[" + str(terminal_size[1]) + ";1H┗" + "━" * (terminal_size[0] - 2) + "┛", end="")
+                print("\033[4;1H", end="")
+                if lenfilelist != -1:
+                    for i in range(math.ceil(len(printdata) / row)):
+                        if i > terminal_size[1] - 6:
                             break
-                        tmp += 1
-                        if select == page * row * (terminal_size[1] - 5) + (i * row + j):
-                            print(
-                                "\033[7m" + subp.isdir(
-                                    subp.ljust_kana(printdata[page * row * (terminal_size[1] - 5) + (i * row + j)],
-                                                    lenfilelist), True) + "\033[0m", end="")
-                        else:
-                            print(subp.isdir(
-                                subp.ljust_kana(printdata[page * row * (terminal_size[1] - 5) + (i * row + j)],
-                                                lenfilelist)), end="")
-                    print(" " * ((terminal_size[0] - 2) - lenfilelist * tmp) + "┃")
-
-                print(("┃" + " " * (terminal_size[0] - 2) + "┃\n") * (
-                        terminal_size[1] - (math.ceil(len(printdata) / row) + 5)),
-                      end="")
-                print("\033[2K┃" + subp.center_kana(
-                    "page " + str(page + 1) + "/" + str(math.ceil(len(printdata) / (row * (terminal_size[1] - 5)))),
-                    terminal_size[0] - 2) + "┃")
-            else:
-                print("┃" + subp.center_kana("No file or directory", terminal_size[0] - 2) + "┃")
-                print(("┃" + " " * (terminal_size[0] - 2) + "┃\n") * (terminal_size[1] - 5), end="")
-
-            k = Key()
-            if k == "\x1b":
-                k = Key()
-                if k == "[":
-                    k = Key()
-                    if k == "A":
-                        if select - row > -1:
-                            select -= row
-                            if select < page * row * (terminal_size[1] - 5):
-                                page -= 1
-                    elif k == "B":
-                        if select + row < len(filelist):
-                            select += row
-                            if select >= (page + 1) * row * (terminal_size[1] - 5):
-                                page += 1
-                    elif k == "C":
-                        if select + 1 < len(filelist):
-                            select += 1
-                            if select >= (page + 1) * row * (terminal_size[1] - 5):
-                                page += 1
-                    elif k == "D":
-                        if select - 1 > -1:
-                            select -= 1
-                            if select < page * row * (terminal_size[1] - 5):
-                                page -= 1
-                    elif k == "1":
-                        k = Key()
-                        if k == "5":
-                            Key()
-                            event.set()
-                            filelist = glob.glob(path + "/" + search_text + "*")
-                            print("\033[1;1H\033[2J┏" + "━" * (terminal_size[0] - 2) + "┓")
-                            print("\033[3;1H┣" + "━" * (terminal_size[0] - 2) + "┫")
-                            if len(filelist) != 0:
-                                printdata = list(
-                                    map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
-                                lenfilelist = max(list(map(lambda n: subp.width_kana(n), printdata))) + 1
-                                row = math.floor((terminal_size[0] - 2) / lenfilelist)
+                        print("\033[2K┃", end="")
+                        tmp = 0
+                        for j in range(row):
+                            if len(printdata) - 1 < page * (row * (terminal_size[1] - 5)) + (i * row + j):
+                                break
+                            tmp += 1
+                            if select == page * row * (terminal_size[1] - 5) + (i * row + j):
+                                print(
+                                    "\033[7m" + subp.isdir(
+                                        subp.ljust_kana(printdata[page * row * (terminal_size[1] - 5) + (i * row + j)],
+                                                        lenfilelist), True) + "\033[0m", end="")
                             else:
-                                lenfilelist = -1
-                            if len(filelist) - 1 < select:
-                                page = 0
-                                select = page * row * (terminal_size[1] - 5) + 0
-                            event.clear()
-                            th = threading.Thread(target=subp.th1,
-                                                  args=([filelist, title, path, event, "reloaded"]))
-                            th.start()
-                elif k == "O":
-                    k = Key()
-                    if k == "S":
-                        search = 1
+                                print(subp.isdir(
+                                    subp.ljust_kana(printdata[page * row * (terminal_size[1] - 5) + (i * row + j)],
+                                                    lenfilelist)), end="")
+                        print(" " * ((terminal_size[0] - 2) - lenfilelist * tmp) + "┃")
 
-            elif k == "\n":
-                if lenfilelist == -1:
-                    k = ""
-                    continue
-                if os.path.isdir(filelist[select]):
-                    k = ""
-                    search_text = ""
-                    event.set()
-                    path = filelist[select]
-                    page = 0
-                    select = page * row * (terminal_size[1] - 5) + 0
-                    filelist = glob.glob(path + "/" + search_text + "*")
-                    if len(filelist) != 0:
-                        printdata = list(map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
-                        lenfilelist = max(list(map(lambda n: subp.width_kana(n), printdata))) + 1
-                        row = math.floor((terminal_size[0] - 2) / lenfilelist)
-                    else:
-                        lenfilelist = -1
-                    event.clear()
-                    th = threading.Thread(target=subp.th1, args=([filelist, title, path, event]))
-                    th.start()
-            elif k == "\x7f":
-                if search_text == "":
-                    event.set()
-                    path = "/".join(path.split("/")[:-1])
-                    search_text = ""
-                    page = 0
-                    select = page * row * (terminal_size[1] - 5) + 0
-                    filelist = glob.glob(path + "/" + search_text + "*")
-                    if len(filelist) != 0:
-                        printdata = list(map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
-                        lenfilelist = max(list(map(lambda n: subp.width_kana(n), printdata))) + 1
-                        row = math.floor((terminal_size[0] - 2) / lenfilelist)
-                    else:
-                        lenfilelist = -1
-                    event.clear()
-                    th = threading.Thread(target=subp.th1, args=([filelist, title, path, event]))
-                    th.start()
+                    print(("┃" + " " * (terminal_size[0] - 2) + "┃\n") * (
+                            terminal_size[1] - (math.ceil(len(printdata) / row) + 5)),
+                          end="")
+                    print("\033[2K┃" + subp.center_kana(
+                        "page " + str(page + 1) + "/" + str(math.ceil(len(printdata) / (row * (terminal_size[1] - 5)))),
+                        terminal_size[0] - 2) + "┃")
                 else:
-                    search_text = ""
+                    print("┃" + subp.center_kana("No file or directory", terminal_size[0] - 2) + "┃")
+                    print(("┃" + " " * (terminal_size[0] - 2) + "┃\n") * (terminal_size[1] - 5), end="")
+
+                k = Key()
+                if k == "\x1b":
+                    k = Key()
+                    if k == "[":
+                        k = Key()
+                        if k == "A":
+                            if select - row > -1:
+                                select -= row
+                                if select < page * row * (terminal_size[1] - 5):
+                                    page -= 1
+                        elif k == "B":
+                            if select + row < len(filelist):
+                                select += row
+                                if select >= (page + 1) * row * (terminal_size[1] - 5):
+                                    page += 1
+                        elif k == "C":
+                            if select + 1 < len(filelist):
+                                select += 1
+                                if select >= (page + 1) * row * (terminal_size[1] - 5):
+                                    page += 1
+                        elif k == "D":
+                            if select - 1 > -1:
+                                select -= 1
+                                if select < page * row * (terminal_size[1] - 5):
+                                    page -= 1
+                        elif k == "1":
+                            k = Key()
+                            if k == "5":
+                                Key()
+                                event.set()
+                                filelist = glob.glob(path + "/" + search_text + "*")
+                                print("\033[1;1H\033[2J┏" + "━" * (terminal_size[0] - 2) + "┓")
+                                print("\033[3;1H┣" + "━" * (terminal_size[0] - 2) + "┫")
+                                if len(filelist) != 0:
+                                    printdata = list(
+                                        map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
+                                    lenfilelist = max(list(map(lambda n: subp.width_kana(n), printdata))) + 1
+                                    row = math.floor((terminal_size[0] - 2) / lenfilelist)
+                                else:
+                                    lenfilelist = -1
+                                if len(filelist) - 1 < select:
+                                    page = 0
+                                    select = page * row * (terminal_size[1] - 5) + 0
+                                event.clear()
+                                th = threading.Thread(target=subp.th1,
+                                                      args=([filelist, title, path, event, "reloaded"]))
+                                th.start()
+                    elif k == "O":
+                        k = Key()
+                        if k == "S":
+                            search = 1
+
+                elif k == "\n":
+                    if lenfilelist == -1:
+                        k = ""
+                        continue
+                    if os.path.isdir(filelist[select]):
+                        k = ""
+                        search_text = ""
+                        event.set()
+                        path = filelist[select]
+                        page = 0
+                        select = page * row * (terminal_size[1] - 5) + 0
+                        filelist = glob.glob(path + "/" + search_text + "*")
+                        if len(filelist) != 0:
+                            printdata = list(map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
+                            lenfilelist = max(list(map(lambda n: subp.width_kana(n), printdata))) + 1
+                            row = math.floor((terminal_size[0] - 2) / lenfilelist)
+                        else:
+                            lenfilelist = -1
+                        event.clear()
+                        th = threading.Thread(target=subp.th1, args=([filelist, title, path, event]))
+                        th.start()
+                elif k == "\x7f":
+                    if search_text == "":
+                        event.set()
+                        path = "/".join(path.split("/")[:-1])
+                        search_text = ""
+                        page = 0
+                        select = page * row * (terminal_size[1] - 5) + 0
+                        filelist = glob.glob(path + "/" + search_text + "*")
+                        if len(filelist) != 0:
+                            printdata = list(map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
+                            lenfilelist = max(list(map(lambda n: subp.width_kana(n), printdata))) + 1
+                            row = math.floor((terminal_size[0] - 2) / lenfilelist)
+                        else:
+                            lenfilelist = -1
+                        event.clear()
+                        th = threading.Thread(target=subp.th1, args=([filelist, title, path, event]))
+                        th.start()
+                    else:
+                        search_text = ""
+                        event.set()
+                        filelist = glob.glob(path + "/" + search_text + "*")
+                        print("\033[1;1H\033[2J┏" + "━" * (terminal_size[0] - 2) + "┓")
+                        print("\033[3;1H┣" + "━" * (terminal_size[0] - 2) + "┫")
+                        if len(filelist) != 0:
+                            printdata = list(
+                                map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
+                            lenfilelist = max(list(map(lambda n: subp.width_kana(n), printdata))) + 1
+                            row = math.floor((terminal_size[0] - 2) / lenfilelist)
+                        else:
+                            lenfilelist = -1
+                        if len(filelist) - 1 < select:
+                            page = 0
+                            select = page * row * (terminal_size[1] - 5) + 0
+                        event.clear()
+                        th = threading.Thread(target=subp.th1,
+                                              args=([filelist, title, path, event, "initialized"]))
+                        th.start()
+                if k == "\x06" or search == 1:
                     event.set()
+                    search = 0
+                    print("\033[1;1H┏" + "━" * 6 + "┳" + "━" * (terminal_size[0] - 10) + "┓")
+                    print("┃" + subp.ljust_kana("search┃" + search_text, terminal_size[0] - 2) + "┃")
+                    print("┣" + "━" * 6 + "┻" + "━" * (terminal_size[0] - 10) + "┫", end="")
+                    redata = re.compile("\w")
+                    while k != "\n":
+                        print("\033[2;1H┃" + subp.ljust_kana("search┃" + search_text, terminal_size[0] - 2) + "┃")
+                        k = Key()
+                        if redata.match(k) is not None:
+                            search_text += k
+                        elif k == "\x7f":
+                            search_text = search_text[:-1]
+                    k = ""
                     filelist = glob.glob(path + "/" + search_text + "*")
                     print("\033[1;1H\033[2J┏" + "━" * (terminal_size[0] - 2) + "┓")
                     print("\033[3;1H┣" + "━" * (terminal_size[0] - 2) + "┫")
                     if len(filelist) != 0:
-                        printdata = list(
-                            map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
+                        printdata = list(map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
                         lenfilelist = max(list(map(lambda n: subp.width_kana(n), printdata))) + 1
                         row = math.floor((terminal_size[0] - 2) / lenfilelist)
                     else:
@@ -220,39 +241,12 @@ def Inputfilegui(title, path=None):
                         page = 0
                         select = page * row * (terminal_size[1] - 5) + 0
                     event.clear()
-                    th = threading.Thread(target=subp.th1,
-                                          args=([filelist, title, path, event, "initialized"]))
+                    th = threading.Thread(target=subp.th1, args=([filelist, title, path, event, "searched:" + search_text]))
                     th.start()
-            if k == "\x06" or search == 1:
-                event.set()
-                search = 0
-                print("\033[1;1H┏" + "━" * 6 + "┳" + "━" * (terminal_size[0] - 10) + "┓")
-                print("┃" + subp.ljust_kana("search┃" + search_text, terminal_size[0] - 2) + "┃")
-                print("┣" + "━" * 6 + "┻" + "━" * (terminal_size[0] - 10) + "┫", end="")
-                redata = re.compile("\w")
-                while k != "\n":
-                    print("\033[2;1H┃" + subp.ljust_kana("search┃" + search_text, terminal_size[0] - 2) + "┃")
-                    k = Key()
-                    if redata.match(k) is not None:
-                        search_text += k
-                    elif k == "\x7f":
-                        search_text = search_text[:-1]
-                k = ""
-                filelist = glob.glob(path + "/" + search_text + "*")
-                print("\033[1;1H\033[2J┏" + "━" * (terminal_size[0] - 2) + "┓")
-                print("\033[3;1H┣" + "━" * (terminal_size[0] - 2) + "┫")
-                if len(filelist) != 0:
-                    printdata = list(map(lambda n: os.path.basename(n) + "/" * os.path.isdir(n), filelist))
-                    lenfilelist = max(list(map(lambda n: subp.width_kana(n), printdata))) + 1
-                    row = math.floor((terminal_size[0] - 2) / lenfilelist)
-                else:
-                    lenfilelist = -1
-                if len(filelist) - 1 < select:
-                    page = 0
-                    select = page * row * (terminal_size[1] - 5) + 0
-                event.clear()
-                th = threading.Thread(target=subp.th1, args=([filelist, title, path, event, "searched:" + search_text]))
-                th.start()
+            else:
+                reset()
+                print("The screen is too small!")
+                time.sleep(0.1)
 
     except KeyboardInterrupt:
         event.set()
