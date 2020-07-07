@@ -13,7 +13,7 @@ import cuitools.subp
 
 def reset():
     terminal_size = shutil.get_terminal_size()
-    print("\033[1;1H" + "\033[2K\n" * (terminal_size[1]-1), end="")
+    print("\033[1;1H" + "\033[2K\n" * (terminal_size[1] - 1), end="\033[2K")
     print("\033[1;1H")
 
 
@@ -70,7 +70,20 @@ def Inputfilegui(title, path=None):
             if row != 0:
                 print("\033[1;1H┏" + "━" * (terminal_size[0] - 2) + "┓")
                 print("\033[3;1H┣" + "━" * (terminal_size[0] - 2) + "┫")
-                print("\033[" + str(terminal_size[1]) + ";1H┗" + "━" * (terminal_size[0] - 2) + "┛", end="")
+                tmp = ["↑↓→← / Folder and file selection",
+                       "Ctrl+F,F4 / Search",
+                       "Backspace / Reset the search or go to the parent folder",
+                       "Enter / Folder or file select",
+                       "F5 / Reload"]
+                i = 0
+
+                while len(" ┃ ".join(tmp[:i])) < terminal_size[0] - 2 and len(tmp)+1 > i:
+                    i += 1
+                i -= 1
+                # print("\033[" + str(terminal_size[1]) + ";1H┗" + str(i) + "┛", end="")
+                print("\033[" + str(terminal_size[1]) + ";1H┗\033[7m\033[38;5;2m" +
+                      str(" ┃ \033[38;5;2m".join(tmp[:i])) + " " * ((terminal_size[0] - 2) - len(" ┃ ".join(tmp[:i])))
+                      + "\033[0m┛", end="")
                 print("\033[4;1H", end="")
                 if lenfilelist != -1:
                     for i in range(math.ceil(len(printdata) / row)):
@@ -241,7 +254,8 @@ def Inputfilegui(title, path=None):
                         page = 0
                         select = page * row * (terminal_size[1] - 5) + 0
                     event.clear()
-                    th = threading.Thread(target=subp.th1, args=([filelist, title, path, event, "searched:" + search_text]))
+                    th = threading.Thread(target=subp.th1,
+                                          args=([filelist, title, path, event, "searched:" + search_text]))
                     th.start()
             else:
                 reset()
