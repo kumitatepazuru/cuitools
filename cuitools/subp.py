@@ -1,4 +1,5 @@
 import math
+import re
 import shutil
 import subprocess
 import time
@@ -92,15 +93,15 @@ def count_zen(str):
         wide_chars = "WFA"
         eaw = unicodedata.east_asian_width(c)
         if wide_chars.find(eaw) > -1:
-            n += 1
+            n += 1 - (unicodedata.name(c).find("BOX DRAWINGS") != -1)
     return n
 
 
 def width_kana(str):
-    all = len(str)  # 全文字数
+    ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
+    all = len(ansi_escape.sub("",str))  # 全文字数
     zenkaku = count_zen(str)  # 全角文字数
     hankaku = all - zenkaku  # 半角文字数
-
     return zenkaku * 2 + hankaku
 
 

@@ -17,7 +17,7 @@ def _requires_from_file(filename):
 
 setup(
     name="cuitools",
-    version="1.7.1",
+    version="1.7.2.6",
     url='https://github.com/kumitatepazuru/cuitools',
     author='kumitatepazuru',
     author_email='teltelboya18@gmail.com',
